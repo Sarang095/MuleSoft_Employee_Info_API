@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:db="http://www.mulesoft.org/schema/mule/db"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+
+    <configuration-properties file="db-config.properties"/>
+
+    <http:listener-config name="httpListenerConfig" doc:name="HTTP Listener Config" doc:id="http-listener-config" >
+        <http:listener-connection host="0.0.0.0" port="${http.port:8081}" />
+    </http:listener-config>
+
+    <db:config name="dbConfig" doc:name="DB Config" doc:id="db-config">
+        <db:my-sql-connection host="${db.host}" port="${db.port}" user="${db.user}" password="${db.password}" database="${db.database}"/>
+    </db:config>
+
+    <flow name="get-employee-by-id-flow" doc:id="get-employee-by-id-flow">
+        <http:listener method="GET" path="/employees/{id}" config-ref="httpListenerConfig" doc:name="GET /employees/{id}"/>
+        <set-variable variableName="employeeId" value='#[attributes.uriParams.id]' doc:name="Set employeeId"/>
+        <db:select doc:name="Select Employee" config-ref="dbConfig">
+            <db:sql>SELECT id, name, department, salary FROM employees WHERE id = :id</db:sql>
+            <db:input-parameters>#[{ id: vars.employeeId as Number default null }]</db:input-parameters>
+        </db:select>
+        <choice doc:name="Check Result">
+            <when expression="#[sizeOf(payload default []) > 0]">
+                <set-payload doc:name="To JSON" value='#[
+                    {
+                      id: payload[0].id as Number,
+                      name: payload[0].name as String,
+                      department: payload[0].department as String,
+                      salary: payload[0].salary as Number
+                    }
+                ]'/>
+                <set-variable variableName="httpStatus" value="200"/>
+            </when>
+            <otherwise>
+                <set-payload value='#[{ message: "Employee not found" }]' doc:name="Not Found"/>
+                <set-variable variableName="httpStatus" value="404"/>
+            </otherwise>
+        </choice>
+        <set-attributes value='#[{
+            statusCode: (vars.httpStatus default 200) as Number,
+            headers: {
+              "content-type": "application/json"
+            }
+        }]' doc:name="Set HTTP Response"/>
+    </flow>
+
+    <error-handler>
+        <on-error-propagate enableNotifications="true" logException="true" doc:name="Global Error Handler">
+            <set-payload value='#[{ message: "Internal Server Error" }]' />
+            <set-attributes value='#[{
+                statusCode: 500,
+                headers: {
+                  "content-type": "application/json"
+                }
+            }]'/>
+        </on-error-propagate>
+    </error-handler>
+</mule>
