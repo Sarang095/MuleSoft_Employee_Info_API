@@ -1,0 +1,14 @@
+{
+  "minMuleVersion": "4.4.0",
+  "secureProperties": [],
+  "redeploymentEnabled": true,
+  "name": "employee-info-api",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": []
+    }
+  }
+}
