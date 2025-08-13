@@ -5,6 +5,7 @@ from typing import Dict, Literal, Optional
 
 import numpy as np
 import pandas as pd
+from .risk import compute_atr, position_size_by_risk
 
 Signal = Literal["buy", "sell", "hold"]
 
@@ -19,6 +20,7 @@ class StrategyParams:
 	rsi_high: float = 70.0
 	bb_window: int = 20
 	bb_mult: float = 2.0
+	atr_period: int = 14
 
 
 def _ema(series: pd.Series, span: int) -> pd.Series:
@@ -98,6 +100,12 @@ def compute_indicators(
 	# Bollinger Bands
 	bb_df = _bollinger(close, params.bb_window, params.bb_mult)
 	df = df.join(bb_df)
+
+	# ATR
+	try:
+		df["atr"] = compute_atr(df, params.atr_period)
+	except Exception:
+		df["atr"] = np.nan
 
 	return df
 
@@ -220,6 +228,17 @@ def backtest_strategy(
 	rsi_high: float = 70.0,
 	bb_window: int = 20,
 	bb_mult: float = 2.0,
+	# new risk/cost params
+	account_size: float = 10000.0,
+	trade_pct: float = 1.0,
+	risk_pct: float = 0.01,
+	leverage: float = 1.0,
+	commission_bps: float = 0.0,
+	spread_bps: float = 0.0,
+	atr_period: int = 14,
+	sl_atr_mult: float = 2.0,
+	tp_atr_mult: float = 4.0,
+	size_mode: Literal["fixed_fraction", "atr_risk"] = "fixed_fraction",
 ) -> Dict[str, float]:
 	params = StrategyParams(
 		fast=fast,
@@ -230,88 +249,147 @@ def backtest_strategy(
 		rsi_high=rsi_high,
 		bb_window=bb_window,
 		bb_mult=bb_mult,
+		atr_period=atr_period,
 	)
-	df_sig = generate_signals(df, strategy, params)
-	df_sig = df_sig.copy()
+	df_sig = generate_signals(df, strategy, params).copy()
 
-	# Simulate: trade on next bar open after a signal
-	opens = df_sig["open"]
-	closes = df_sig["close"]
+	opens = df_sig["open"].astype(float)
+	highs = df_sig["high"].astype(float)
+	lows = df_sig["low"].astype(float)
+	closes = df_sig["close"].astype(float)
+	atr = df_sig.get("atr", pd.Series(np.nan, index=df_sig.index)).astype(float)
 	signals = df_sig["signal"].values
 	index = df_sig.index
 
-	position = 0  # 0 flat, 1 long
-	entry_price = 0.0
-	pnl_list = []
-	trade_returns = []
-	trade_outcomes = []  # 1 win, 0 loss
-	equity = 1.0
+	bps_to_frac = 1.0 / 10000.0
+	commission_frac = float(commission_bps) * bps_to_frac
+	spread_frac = float(spread_bps) * bps_to_frac
+
+	equity = float(account_size)
 	equity_curve = []
+	position = 0
+	units = 0.0
+	entry_price_eff = 0.0
+	entry_equity_snapshot = equity
+	sl_price = np.nan
+	tp_price = np.nan
+
+	trade_returns = []
+	trade_outcomes = []
+	wins = []
+	losses = []
+
+	def mark_to_market(i: int) -> float:
+		if position == 1 and units > 0 and entry_price_eff > 0:
+			unreal = (float(closes.iloc[i]) - entry_price_eff) / entry_price_eff
+			return equity * (1 + unreal)
+		return equity
 
 	for i in range(len(df_sig) - 1):
 		bar_signal = signals[i]
 		next_open = float(opens.iloc[i + 1])
-		close_price = float(closes.iloc[i])
 
-		# Record equity mark-to-market
-		if position == 1 and entry_price > 0:
-			unreal = (close_price - entry_price) / entry_price
-			equity_curve.append(equity * (1 + unreal))
-		else:
-			equity_curve.append(equity)
+		# Equity snapshot
+		equity_curve.append(mark_to_market(i))
 
-		if bar_signal == "buy" and position == 0:
+		if position == 0 and bar_signal == "buy":
+			# Effective entry price with spread
+			entry_price_eff = next_open * (1 + spread_frac * 0.5)
+			# Sizing
+			if size_mode == "atr_risk":
+				atr_val = float(atr.iloc[i])
+				if not np.isfinite(atr_val) or atr_val <= 0:
+					continue
+				sl_price = entry_price_eff - sl_atr_mult * atr_val
+				tp_price = entry_price_eff + tp_atr_mult * atr_val
+				units = position_size_by_risk(equity, entry_price_eff, sl_price, risk_pct)
+				# Cap by trade fraction and leverage
+				max_units = max((equity * trade_pct * leverage) / entry_price_eff, 0.0)
+				units = min(units, max_units)
+			else:
+				notional = max(equity * trade_pct * leverage, 0.0)
+				units = notional / entry_price_eff if entry_price_eff > 0 else 0.0
+				atr_val = float(atr.iloc[i])
+				sl_price = entry_price_eff - sl_atr_mult * atr_val if np.isfinite(atr_val) else np.nan
+				tp_price = entry_price_eff + tp_atr_mult * atr_val if np.isfinite(atr_val) else np.nan
+
+			if units <= 0:
+				continue
+			# Fees at entry
+			notional = units * entry_price_eff
+			entry_fee = commission_frac * notional
+			equity -= entry_fee
+			entry_equity_snapshot = equity
 			position = 1
-			entry_price = next_open
-		elif bar_signal == "sell" and position == 1:
-			ret = (next_open - entry_price) / entry_price
-			trade_returns.append(ret)
-			trade_outcomes.append(1 if ret > 0 else 0)
-			equity *= 1 + ret
-			pnl_list.append(ret)
-			position = 0
-			entry_price = 0.0
 
-	# Close any open position at last close
-	if position == 1 and entry_price > 0:
-		final_ret = (float(closes.iloc[-1]) - entry_price) / entry_price
-		trade_returns.append(final_ret)
-		trade_outcomes.append(1 if final_ret > 0 else 0)
-		equity *= 1 + final_ret
-		pnl_list.append(final_ret)
-		position = 0
-		entry_price = 0.0
+		elif position == 1:
+			# Check SL/TP triggers on the bar after signal
+			trigger_sl = np.isfinite(sl_price) and (float(lows.iloc[i + 1]) <= sl_price)
+			trigger_tp = np.isfinite(tp_price) and (float(highs.iloc[i + 1]) >= tp_price)
+			exit_due_to_signal = (bar_signal == "sell")
+
+			should_exit = False
+			if trigger_sl and trigger_tp:
+				# Tie-break: assume SL fills first (conservative)
+				should_exit = True
+			elif trigger_sl or trigger_tp or exit_due_to_signal:
+				should_exit = True
+
+			if should_exit:
+				exit_price_eff = next_open * (1 - spread_frac * 0.5)
+				notional_exit = units * exit_price_eff
+				exit_fee = commission_frac * notional_exit
+				pnl = units * (exit_price_eff - entry_price_eff) - exit_fee
+				equity += pnl
+
+				# Record trade stats relative to equity at entry
+				trade_ret = pnl / max(entry_equity_snapshot, 1e-12)
+				trade_returns.append(trade_ret)
+				if trade_ret > 0:
+					trade_outcomes.append(1)
+					wins.append(trade_ret)
+				else:
+					trade_outcomes.append(0)
+					losses.append(trade_ret)
+
+				position = 0
+				units = 0.0
+				entry_price_eff = 0.0
+				sl_price = np.nan
+				tp_price = np.nan
+
+	# Final mark
+	if len(equity_curve) < len(df_sig):
 		equity_curve.append(equity)
-	else:
-		if len(equity_curve) < len(df_sig):
-			equity_curve.append(equity)
 
 	equity_series = pd.Series(equity_curve, index=index[: len(equity_curve)])
 	returns_series = equity_series.pct_change().fillna(0.0)
 
-	total_return = equity - 1.0
+	total_return = (equity / max(float(account_size), 1e-12)) - 1.0
 	num_trades = len(trade_returns)
 	win_rate = float(np.mean(trade_outcomes)) if trade_outcomes else 0.0
 	avg_trade_return = float(np.mean(trade_returns)) if trade_returns else 0.0
+	avg_win = float(np.mean(wins)) if wins else 0.0
+	avg_loss = float(np.mean(losses)) if losses else 0.0
+	gross_profit = float(np.sum([r for r in trade_returns if r > 0]))
+	gross_loss = float(-np.sum([r for r in trade_returns if r < 0]))
+	profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else float("inf") if gross_profit > 0 else 0.0
 
-	# Max drawdown
 	roll_max = equity_series.cummax()
 	drawdown = (equity_series - roll_max) / roll_max.replace(0, np.nan)
 	max_drawdown = float(drawdown.min()) if not drawdown.empty else 0.0
 
-	# Simple annualization guess: use bars per year if we can infer interval from index
-	# Fallback to sharpe over bar returns times sqrt(252)
 	ret_std = float(returns_series.std())
-	if ret_std > 0:
-		sharpe = float((returns_series.mean() / ret_std) * np.sqrt(252))
-	else:
-		sharpe = 0.0
+	sharpe = float((returns_series.mean() / ret_std) * np.sqrt(252)) if ret_std > 0 else 0.0
 
 	return {
 		"total_return": float(total_return),
 		"num_trades": int(num_trades),
 		"win_rate": float(win_rate),
 		"avg_trade_return": float(avg_trade_return),
+		"avg_win": float(avg_win),
+		"avg_loss": float(avg_loss),
+		"profit_factor": float(profit_factor),
 		"max_drawdown": float(max_drawdown),
 		"sharpe_like": float(sharpe),
 	}
