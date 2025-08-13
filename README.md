@@ -1,5 +1,40 @@
-# employee-info-api
+# BTC Trading Signal Engine
 
-This is a tiny MuleSoft API I put together to look up employee details by ID. It exposes one endpoint, `GET /employees/{id}`, which hits a MySQL table under the hood and returns a clean JSON response with the employee’s name, department, and salary. It uses a basic HTTP Listener, a Database Connector configured for MySQL, and a small DataWeave transform to shape the result.
+A lightweight Python engine that generates trading signals for BTC using common technical strategies (SMA crossover, RSI, MACD, Bollinger Bands). Fetches OHLCV data from Binance or from a local CSV.
 
-It’s intentionally simple and beginner‑friendly: easy to run locally in Anypoint Studio, easy to read, and easy to extend later (add more fields, more endpoints, validation, etc.). If you’ve been meaning to get comfortable with Mule flows, DB queries, and returning JSON responses, this is a nice, no‑surprises starting point.
+## Quick start
+
+1) Create a virtual environment and install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+2) Run once to get a signal:
+
+```bash
+python main.py --strategy sma --symbol BTCUSDT --interval 1h --limit 500
+```
+
+3) Backtest a strategy:
+
+```bash
+python main.py --strategy macd --symbol BTCUSDT --interval 1h --limit 1000 --backtest
+```
+
+4) Use local CSV data instead of fetching (must contain columns: timestamp/open/high/low/close/volume):
+
+```bash
+python main.py --strategy rsi --data-csv path/to/btc_ohlcv.csv
+```
+
+## Strategies
+- sma: Fast/slow simple moving average crossover
+- rsi: RSI overbought/oversold reversals
+- macd: MACD line and signal line crossovers
+- bollinger: Mean reversion around Bollinger Bands
+
+## Disclaimer
+This software is for informational and educational purposes only and does not constitute financial advice. Use at your own risk.

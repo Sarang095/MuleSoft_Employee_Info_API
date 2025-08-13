@@ -1,0 +1,1 @@
+timestamp,symbol,action,strategy,params,price,units,notional,sl,tp,equity_before,equity_after,pnl,pnl_pct,reason,loop
