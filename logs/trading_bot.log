@@ -1,0 +1,66 @@
+2025-08-14 18:51:08 | ERROR | DataHandler | Failed to load markets: binance GET https://api.binance.com/api/v3/exchangeInfo 451  {
+  "code": 0,
+  "msg": "Service unavailable from a restricted location according to 'b. Eligibility' in https://www.binance.com/en/terms. Please contact customer service if you believe you received this message in error."
+}
+2025-08-14 18:52:29 | ERROR | DataHandler | Failed to init/load markets for binance: binance GET https://api.binance.com/api/v3/exchangeInfo 451  {
+  "code": 0,
+  "msg": "Service unavailable from a restricted location according to 'b. Eligibility' in https://www.binance.com/en/terms. Please contact customer service if you believe you received this message in error."
+}
+2025-08-14 18:52:32 | INFO | DataHandler | Connected to exchange: kucoin
+2025-08-14 18:52:32 | INFO | DataHandler | Fetching OHLCV for BTC/USDT 1d from 2019-01-01 to 2022-12-31 with limit 1000
+2025-08-14 18:52:33 | INFO | DataHandler | Fetched 2000 rows of OHLCV for BTC/USDT 1d
+2025-08-14 18:52:33 | INFO | Backtest | Starting Portfolio Value: 10000.00
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 7630.11, Cost: 1093.36, Comm 1.09
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 7306.94, Cost: 1093.36, Comm 1.05
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 33368.28, Cost: 496.22, Comm 0.50
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 35462.46, Cost: 496.22, Comm 0.53
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 47131.65, Cost: 903.91, Comm 0.90
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 48269.85, Cost: 903.91, Comm 0.93
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 15928.16, Cost: 805.18, Comm 0.81
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 17770.41, Cost: 805.18, Comm 0.90
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 20361.20, Cost: 1201.06, Comm 1.20
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 24087.95, Cost: 1201.06, Comm 1.42
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 30096.60, Cost: 2099.37, Comm 2.10
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 29165.51, Cost: 2099.37, Comm 2.03
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 26637.51, Cost: 1779.65, Comm 1.78
+2025-08-14 18:52:34 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 26111.64, Cost: 1779.65, Comm 1.74
+2025-08-14 18:52:34 | INFO | Backtest | Final Portfolio Value: 10202.56
+2025-08-14 18:52:34 | ERROR | DataHandler | Failed to init/load markets for binance: binance GET https://api.binance.com/api/v3/exchangeInfo 451  {
+  "code": 0,
+  "msg": "Service unavailable from a restricted location according to 'b. Eligibility' in https://www.binance.com/en/terms. Please contact customer service if you believe you received this message in error."
+}
+2025-08-14 18:52:36 | INFO | DataHandler | Connected to exchange: kucoin
+2025-08-14 18:52:36 | INFO | DataHandler | Fetching OHLCV for BTC/USDT 1d from 2023-01-01 to 2025-08-14 with limit 1000
+2025-08-14 18:52:36 | INFO | DataHandler | Fetched 957 rows of OHLCV for BTC/USDT 1d
+2025-08-14 18:52:36 | INFO | Backtest | Starting Portfolio Value: 10000.00
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 30096.60, Cost: 2036.19, Comm 2.04
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 29165.51, Cost: 2036.19, Comm 1.97
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 26637.51, Cost: 1726.09, Comm 1.73
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 26111.64, Cost: 1726.09, Comm 1.69
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 60325.65, Cost: 1472.12, Comm 1.47
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 61772.30, Cost: 1472.12, Comm 1.51
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 54058.92, Cost: 845.63, Comm 0.85
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 55988.09, Cost: 845.63, Comm 0.88
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | BUY EXECUTED, Price: 98710.93, Cost: 1117.36, Comm 1.12
+2025-08-14 18:52:36 | INFO | RegimeStrategyBT | SELL EXECUTED, Price: 95738.01, Cost: 1117.36, Comm 1.08
+2025-08-14 18:52:36 | INFO | Backtest | Final Portfolio Value: 9920.43
+2025-08-14 18:52:37 | INFO | MainBacktest | ==== IN-SAMPLE (TRAIN) ====
+2025-08-14 18:52:37 | INFO | MainBacktest | Starting Value: 10000.0
+2025-08-14 18:52:37 | INFO | MainBacktest | Final Value: 10202.56465294705
+2025-08-14 18:52:37 | INFO | MainBacktest | Net Profit: 202.5646529470505
+2025-08-14 18:52:37 | INFO | MainBacktest | Annualized Return %: 0.2809946142274375
+2025-08-14 18:52:37 | INFO | MainBacktest | Sharpe Ratio: 0.02167679666736098
+2025-08-14 18:52:37 | INFO | MainBacktest | Max Drawdown %: 1.0861773842893534
+2025-08-14 18:52:37 | INFO | MainBacktest | Total Trades: 7
+2025-08-14 18:52:37 | INFO | MainBacktest | Win Rate %: 57.14285714285714
+2025-08-14 18:52:37 | INFO | MainBacktest | Profit Factor: inf
+2025-08-14 18:52:37 | INFO | MainBacktest | ==== OUT-OF-SAMPLE (TEST) ====
+2025-08-14 18:52:37 | INFO | MainBacktest | Starting Value: 10000.0
+2025-08-14 18:52:37 | INFO | MainBacktest | Final Value: 9920.429331851468
+2025-08-14 18:52:37 | INFO | MainBacktest | Net Profit: -79.5706681485317
+2025-08-14 18:52:37 | INFO | MainBacktest | Annualized Return %: -0.2652414229920829
+2025-08-14 18:52:37 | INFO | MainBacktest | Sharpe Ratio: -0.02931457004366061
+2025-08-14 18:52:37 | INFO | MainBacktest | Max Drawdown %: 1.0657829796556688
+2025-08-14 18:52:37 | INFO | MainBacktest | Total Trades: 5
+2025-08-14 18:52:37 | INFO | MainBacktest | Win Rate %: 40.0
+2025-08-14 18:52:37 | INFO | MainBacktest | Profit Factor: inf
